@@ -7,7 +7,8 @@
     </div>
 
     <div v-else-if="error" class="text-center py-8">
-      <p class="text-red-500">{{ error }}</p>
+      <p class="text-red-500 mb-2">{{ error }}</p>
+      <p class="text-sm text-gray-600">Make sure your backend server is running on port 8000</p>
     </div>
 
     <div v-else-if="drafts.length === 0" class="text-center py-8">

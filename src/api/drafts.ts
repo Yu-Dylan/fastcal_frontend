@@ -15,37 +15,42 @@ export interface DraftEvent {
 export const draftsApi = {
   // Create a new draft event
   async create(draft: Omit<DraftEvent, '_id' | 'status'>) {
-    const response = await apiClient.post('/drafts/create', draft)
-    return response.data
-  },
-
-  // Get a specific draft by ID
-  async getById(id: string) {
-    const response = await apiClient.get(`/drafts/${id}`)
+    const response = await apiClient.post('/EventDrafts/create', {
+      user: draft.user,
+      title: draft.title,
+      startTime: draft.startTime,
+      endTime: draft.endTime,
+      location: draft.location,
+      attendees: draft.attendees,
+      tags: draft.tags,
+    })
     return response.data
   },
 
   // Get all drafts for a user
   async getUserDrafts(userId: string) {
-    const response = await apiClient.get(`/drafts/user/${userId}`)
+    const response = await apiClient.post('/EventDrafts/getUserDrafts', { user: userId })
     return response.data
   },
 
   // Validate a draft
   async validate(id: string) {
-    const response = await apiClient.post(`/drafts/${id}/validate`)
+    const response = await apiClient.post('/EventDrafts/validate', { id })
     return response.data
   },
 
   // Update a draft
   async update(id: string, updates: Partial<DraftEvent>) {
-    const response = await apiClient.put(`/drafts/${id}`, updates)
+    const response = await apiClient.post('/EventDrafts/modify', {
+      id,
+      ...updates,
+    })
     return response.data
   },
 
   // Delete a draft
   async delete(id: string) {
-    const response = await apiClient.delete(`/drafts/${id}`)
+    const response = await apiClient.post('/EventDrafts/remove', { id })
     return response.data
   },
 }
