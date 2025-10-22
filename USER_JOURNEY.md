@@ -1,0 +1,5 @@
+# FastCal User Journey
+
+## Typical User Flow
+
+A user opens FastCal to quickly schedule a team meeting. On the left side of the screen, they see a clean form where they enter "Team Standup" as the title, select tomorrow at 10:00 AM as the start time and 10:30 AM as the end time, type "Conference Room B" as the location, and add their teammates' email addresses separated by commas in the attendees field. After clicking "Create Draft," the event appears immediately on the right side of the screen in their drafts list with a blue "Created" status badge. The user then clicks the green "Validate" button to check if the event has any conflicts with their existing calendar. The system validates the draft, and the status changes to "Validated" with a green badge, indicating it's ready to be committed to their calendar. If they made a mistake or the event is no longer needed, they can simply click the red "Delete" button to remove it from their drafts. The interface updates reactively without any page reloads, making the entire process fast and seamless.
