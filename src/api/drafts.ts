@@ -29,28 +29,34 @@ export const draftsApi = {
 
   // Get all drafts for a user
   async getUserDrafts(userId: string) {
-    const response = await apiClient.post('/EventDrafts/getUserDrafts', { user: userId })
+    const response = await apiClient.post('/EventDrafts/getByUser', { user: userId })
+    return response.data
+  },
+
+  // Get a specific draft by ID
+  async getDraft(id: string) {
+    const response = await apiClient.post('/EventDrafts/getDraft', { draft: id })
     return response.data
   },
 
   // Validate a draft
   async validate(id: string) {
-    const response = await apiClient.post('/EventDrafts/validate', { id })
+    const response = await apiClient.post('/EventDrafts/validate', { draft: id })
     return response.data
   },
 
   // Update a draft
   async update(id: string, updates: Partial<DraftEvent>) {
-    const response = await apiClient.post('/EventDrafts/modify', {
-      id,
-      ...updates,
+    const response = await apiClient.post('/EventDrafts/updateDraft', {
+      draft: id,
+      updates: updates,
     })
     return response.data
   },
 
   // Delete a draft
   async delete(id: string) {
-    const response = await apiClient.post('/EventDrafts/remove', { id })
+    const response = await apiClient.post('/EventDrafts/deleteDraft', { draft: id })
     return response.data
   },
 }
