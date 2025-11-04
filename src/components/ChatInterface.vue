@@ -374,7 +374,9 @@ const confirmAction = async (messageIndex: number) => {
           isUser: false,
         })
       } else {
-        message.action.confirmed = true
+        if (message?.action) {
+          message.action.confirmed = true
+        }
         messages.value.push({
           text: `Event deleted from Google Calendar!`,
           isUser: false,
@@ -384,7 +386,7 @@ const confirmAction = async (messageIndex: number) => {
           window.dispatchEvent(new CustomEvent('refreshCalendar'))
         }, 1000)
       }
-    } else if (message.action.type === 'edit') {
+    } else if (message?.action?.type === 'edit') {
       // Use the eventId directly (it's already the MongoDB _id from Gemini)
       const eventData = message.action.event
       const response = await axios.post(`${API_BASE}/EventDrafts/updateDraft`, {
@@ -405,7 +407,9 @@ const confirmAction = async (messageIndex: number) => {
           isUser: false,
         })
       } else {
-        message.action.confirmed = true
+        if (message?.action) {
+          message.action.confirmed = true
+        }
         // Refresh the calendar view
         await draftsStore.fetchUserDrafts()
         messages.value.push({
@@ -423,7 +427,7 @@ const confirmAction = async (messageIndex: number) => {
   }
 }
 
-const rejectAction = (messageIndex: number) => {
+const rejectAction = () => {
   messages.value.push({
     text: "Okay, I won't do that. What else can I help you with?",
     isUser: false,

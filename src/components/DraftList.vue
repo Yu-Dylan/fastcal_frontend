@@ -2,13 +2,51 @@
   <div class="bg-gray-800 p-6 rounded-lg shadow-xl border border-gray-700">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-2xl font-bold text-white">Your Calendar</h2>
-      <button 
-        @click="refresh"
-        :disabled="loading"
-        class="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:bg-gray-600 border border-gray-600"
-      >
-        {{ loading ? 'Loading...' : 'Refresh' }}
-      </button>
+      <div class="flex gap-2">
+        <!-- Calendar Filter Button -->
+        <div class="relative" v-if="availableCalendars.size > 0">
+          <button 
+            @click="showCalendarFilter = !showCalendarFilter"
+            class="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded hover:bg-gray-600 border border-gray-600 flex items-center gap-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M7 12h10M10 18h4"/>
+            </svg>
+            Filter
+          </button>
+          
+          <!-- Dropdown -->
+          <div 
+            v-if="showCalendarFilter"
+            class="absolute right-0 mt-2 w-64 bg-gray-700 rounded-lg shadow-xl border border-gray-600 z-10 p-3"
+          >
+            <div class="text-xs font-semibold text-gray-400 mb-2">CALENDARS</div>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+              <label 
+                v-for="[calendarId, calendar] in availableCalendars" 
+                :key="calendarId"
+                class="flex items-center gap-2 cursor-pointer hover:bg-gray-600 p-2 rounded"
+              >
+                <input 
+                  type="checkbox" 
+                  :checked="calendar.enabled"
+                  @change="toggleCalendar(calendarId)"
+                  class="w-4 h-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-700"
+                />
+                <span class="text-sm text-gray-200 truncate">{{ calendar.name }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <button 
+          @click="refresh"
+          :disabled="loading"
+          class="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:bg-gray-600 border border-gray-600"
+        >
+          {{ loading ? 'Loading...' : 'Refresh' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-8">
@@ -18,6 +56,17 @@
     <div v-else-if="error" class="text-center py-8">
       <p class="text-red-400 mb-2">{{ error }}</p>
       <p class="text-sm text-gray-500">Make sure your backend server is running on port 8000</p>
+    </div>
+
+    <div v-else-if="googleAccountError" class="text-center py-8">
+      <p class="text-yellow-400 mb-2">{{ googleAccountError }}</p>
+      <p class="text-sm text-gray-400 mb-4">Your Google Calendar needs to be reconnected</p>
+      <button 
+        @click="reconnectGoogle"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Reconnect Google Calendar
+      </button>
     </div>
 
     <div v-else-if="drafts.length === 0 && googleEvents.length === 0" class="text-center py-8">
@@ -48,7 +97,11 @@
                   {{ event.title }}
                 </a>
                 <div v-else class="text-sm font-medium text-white truncate">{{ event.title }}</div>
-                <div class="text-xs text-gray-400 truncate">{{ event.location || 'No location' }}</div>
+                <div class="text-xs text-gray-400 truncate">
+                  <span v-if="event.calendarName" class="text-gray-500">{{ event.calendarName }}</span>
+                  <span v-if="event.calendarName" class="mx-2">•</span>
+                  <span>{{ event.location || 'No location' }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -79,18 +132,29 @@ const loading = computed(() => draftsStore.loading)
 const error = computed(() => draftsStore.error)
 const googleEvents = ref<any[]>([])
 const filteredEventIds = ref<string[] | null>(null)
+const availableCalendars = ref<Map<string, { name: string; enabled: boolean }>>(new Map())
+const showCalendarFilter = ref(false)
 
 // Merge and sort all events
 const allEvents = computed(() => {
-  const google = googleEvents.value.map(e => ({
-    id: e.id,
-    title: e.summary,
-    startTime: e.start?.dateTime || e.start?.date,
-    endTime: e.end?.dateTime || e.end?.date,
-    location: e.location,
-    htmlLink: e.htmlLink, // Include the Google Calendar link
-    source: 'google'
-  }))
+  const google = googleEvents.value
+    .filter(e => {
+      // Filter by calendar selection
+      const calendarId = e.calendarId || 'primary'
+      const calendar = availableCalendars.value.get(calendarId)
+      return !calendar || calendar.enabled
+    })
+    .map(e => ({
+      id: e.id,
+      title: e.summary,
+      startTime: e.start?.dateTime || e.start?.date,
+      endTime: e.end?.dateTime || e.end?.date,
+      location: e.location,
+      htmlLink: e.htmlLink, // Include the Google Calendar link
+      calendarName: e.calendarName, // Calendar name from backend
+      calendarId: e.calendarId,
+      source: 'google'
+    }))
   
   // Don't show local drafts - Google Calendar is the source of truth
   // const local = drafts.value.map(d => ({
@@ -129,7 +193,17 @@ onMounted(async () => {
     fetchGoogleEvents()
     filteredEventIds.value = null
   })
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (showCalendarFilter.value && !target.closest('.relative')) {
+      showCalendarFilter.value = false
+    }
+  })
 })
+
+const googleAccountError = ref<string | null>(null)
 
 const fetchGoogleEvents = async () => {
   try {
@@ -143,14 +217,54 @@ const fetchGoogleEvents = async () => {
     console.log('Google Calendar API response:', data)
     if (data.events) {
       googleEvents.value = data.events
+      googleAccountError.value = null
       console.log('Loaded', data.events.length, 'Google Calendar events')
+      
+      // Extract unique calendars and add to availableCalendars
+      const calendarsMap = new Map(availableCalendars.value)
+      data.events.forEach((event: any) => {
+        const calendarId = event.calendarId || 'primary'
+        const calendarName = event.calendarName || 'Primary Calendar'
+        if (!calendarsMap.has(calendarId)) {
+          calendarsMap.set(calendarId, { name: calendarName, enabled: true })
+        }
+      })
+      availableCalendars.value = calendarsMap
     } else if (data.error) {
       console.error('Google Calendar API error:', data.error)
+      googleAccountError.value = data.error
     } else {
       console.warn('No events returned from Google Calendar')
+      googleAccountError.value = 'No events returned'
     }
   } catch (e) {
     console.error('Failed to fetch Google events:', e)
+    googleAccountError.value = 'Failed to connect to backend'
+  }
+}
+
+const reconnectGoogle = async () => {
+  try {
+    const response = await fetch('http://localhost:8000/api/CalendarSync/getGoogleAuthUrl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: 'user123' })
+    })
+    const data = await response.json()
+    if (data.url) {
+      window.location.href = data.url
+    }
+  } catch (e) {
+    console.error('Failed to get auth URL:', e)
+  }
+}
+
+const toggleCalendar = (calendarId: string) => {
+  const calendar = availableCalendars.value.get(calendarId)
+  if (calendar) {
+    calendar.enabled = !calendar.enabled
+    // Trigger reactivity by creating a new Map
+    availableCalendars.value = new Map(availableCalendars.value)
   }
 }
 
@@ -159,26 +273,7 @@ const refresh = async () => {
   await fetchGoogleEvents()
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
-
-const formatGoogleDate = (dateString: string) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+// Removed unused formatDate and formatGoogleDate functions
 
 const getEventDate = (event: any) => {
   const date = new Date(event.startTime)
@@ -207,31 +302,6 @@ const getGoogleCalendarLink = (event: any) => {
   return `https://calendar.google.com/calendar/event?eid=${btoa(event.id)}`
 }
 
-const getStatusClass = (status?: string) => {
-  switch (status) {
-    case 'Created':
-      return 'bg-blue-100 text-blue-800'
-    case 'Proposed':
-      return 'bg-yellow-100 text-yellow-800'
-    case 'Validated':
-      return 'bg-green-100 text-green-800'
-    case 'Conflicted':
-      return 'bg-red-100 text-red-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
-
-const handleValidate = async (id: string) => {
-  try {
-    console.log('Validating draft:', id)
-    await draftsStore.validateDraft(id)
-    console.log('Validation complete')
-  } catch (error) {
-    console.error('Failed to validate draft:', error)
-    alert(`Failed to validate: ${error}`)
-  }
-}
 
 const handleDelete = async (id: string, source: string) => {
   if (confirm('Are you sure you want to delete this event?')) {
