@@ -44,7 +44,7 @@
                   Accept
                 </button>
                 <button 
-                  @click="rejectAction(index)"
+                  @click="rejectAction()"
                   class="text-xs px-3 py-1 rounded"
                   :class="message.isUser ? 'bg-white text-blue-600' : 'bg-red-600 text-white hover:bg-red-700'"
                 >
@@ -116,6 +116,7 @@ interface Message {
     eventId?: string
     confirmed?: boolean
   }
+  searchResults?: string[]
 }
 
 // Load chat history from localStorage
@@ -299,7 +300,7 @@ const sendMessage = async () => {
 
 const confirmAction = async (messageIndex: number) => {
   const message = messages.value[messageIndex]
-  if (!message.action) return
+  if (!message || !message.action) return
 
   try {
     if (message.action.type === 'create') {

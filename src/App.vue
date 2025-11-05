@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted } from 'vue'
 import ChatInterface from './components/ChatInterface.vue'
 import DraftList from './components/DraftList.vue'
 import LoginPage from './components/LoginPage.vue'
