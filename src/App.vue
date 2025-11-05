@@ -5,6 +5,8 @@ import DraftList from './components/DraftList.vue'
 import LoginPage from './components/LoginPage.vue'
 import { useAuth } from './composables/useAuth.ts'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+
 const { user, loading, isAuthenticated, checkAuth, logout } = useAuth()
 
 onMounted(async () => {
@@ -28,7 +30,7 @@ onMounted(async () => {
   if (code && authFlow === 'calendar') {
     // This is a calendar connection callback
     try {
-      const response = await fetch('http://localhost:8000/api/CalendarSync/handleGoogleCallback', {
+      const response = await fetch(`${API_BASE_URL}/CalendarSync/handleGoogleCallback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: user.value.user, code })
@@ -49,7 +51,7 @@ onMounted(async () => {
 
 const connectGoogle = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/CalendarSync/getGoogleAuthUrl', {
+    const response = await fetch(`${API_BASE_URL}/CalendarSync/getGoogleAuthUrl`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: user.value.user })

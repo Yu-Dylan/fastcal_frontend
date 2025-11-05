@@ -102,7 +102,7 @@ import { ref, nextTick, watch } from 'vue'
 import axios from 'axios'
 import { useDraftsStore } from '../stores/drafts'
 
-const API_BASE = 'http://localhost:8000/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 const userId = 'user123'
 const draftsStore = useDraftsStore()
 const chatContainer = ref<HTMLElement | null>(null)
