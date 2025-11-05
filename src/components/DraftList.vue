@@ -125,6 +125,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useDraftsStore } from '../stores/drafts'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+
 const draftsStore = useDraftsStore()
 
 const drafts = computed(() => draftsStore.drafts)
@@ -208,7 +210,7 @@ const googleAccountError = ref<string | null>(null)
 const fetchGoogleEvents = async () => {
   try {
     console.log('Fetching Google Calendar events...')
-    const response = await fetch('http://localhost:8000/api/CalendarSync/getGoogleEvents', {
+    const response = await fetch(`${API_BASE_URL}/CalendarSync/getGoogleEvents`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: 'user123' })
@@ -245,7 +247,7 @@ const fetchGoogleEvents = async () => {
 
 const reconnectGoogle = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/CalendarSync/getGoogleAuthUrl', {
+    const response = await fetch(`${API_BASE_URL}/CalendarSync/getGoogleAuthUrl`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: 'user123' })
@@ -308,7 +310,7 @@ const handleDelete = async (id: string, source: string) => {
     try {
       if (source === 'google') {
         // Delete from Google Calendar
-        const response = await fetch('http://localhost:8000/api/CalendarSync/deleteGoogleEvent', {
+        const response = await fetch(`${API_BASE_URL}/CalendarSync/deleteGoogleEvent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user: 'user123', eventId: id })
